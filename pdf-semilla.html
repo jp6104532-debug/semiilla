@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PDF Semilla">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>PDF Semilla</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--tx:#1c1c1e;--sub:#8e8e93;--ac:#007aff;--sep:#e5e5ea;--red:#ff3b30;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--card:#1c1c1e;--tx:#fff;--sub:#98989d;--ac:#0a84ff;--sep:#38383a}}
+:root[data-theme="dark"]{--bg:#000;--card:#1c1c1e;--tx:#fff;--sub:#98989d;--ac:#0a84ff;--sep:#38383a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+main{flex:1;overflow-y:auto;padding:12px 16px 24px;max-width:600px;width:100%;margin:0 auto}
+h1{font-size:34px;font-weight:700;letter-spacing:-.5px;margin:8px 0 4px}
+p.s{color:var(--sub);font-size:15px;margin:0 0 18px}
+.card{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:.5px solid var(--sep)}
+.row:last-child{border-bottom:0}
+.row .n{flex:1;min-width:0}.row .n b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .n small{color:var(--sub);font-size:13px}
+.row img{width:44px;height:44px;border-radius:8px;object-fit:cover}
+.ib{border:0;background:none;color:var(--ac);font-size:20px;width:32px;height:32px;border-radius:16px}
+.ib.d{color:var(--red)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:600;background:var(--ac);color:#fff;margin-bottom:12px;text-align:center}
+.btn.g{background:var(--card);color:var(--ac)}
+.btn:disabled{opacity:.35}.btn:active{opacity:.7}
+.empty{text-align:center;color:var(--sub);padding:28px 16px;font-size:15px}
+textarea,input[type=text]{width:100%;border:0;background:var(--card);color:var(--tx);border-radius:14px;padding:14px;font:inherit;margin-bottom:16px;resize:none;outline:none}
+nav{display:flex;background:color-mix(in srgb,var(--card) 80%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:.5px solid var(--sep)}
+nav button{flex:1;border:0;background:none;padding:9px 0 8px;color:var(--sub);font-size:11px;font-weight:500}
+nav button span{display:block;font-size:24px;line-height:28px}
+nav button.on{color:var(--ac)}
+.tab{display:none}.tab.on{display:block}
+#splash{position:fixed;inset:0;background:var(--bg);z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s}
+#splash.out{opacity:0;pointer-events:none}
+#splash h2{font-size:38px;font-weight:700;letter-spacing:-.5px;margin:0;animation:up .9s ease both}
+#splash p{color:var(--sub);margin-top:8px;animation:up .9s .4s ease both}
+.heart{display:inline-block;animation:beat 1.2s ease-in-out infinite}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes beat{50%{transform:scale(1.2)}}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8;display:none;align-items:flex-end}
+#sheet.on{display:flex}
+#sheet div{background:var(--bg);width:100%;border-radius:20px 20px 0 0;padding:22px 16px calc(16px + env(safe-area-inset-bottom,0px));text-align:center}
+#sheet h3{margin:0 0 4px;font-size:22px}#sheet p{color:var(--sub);margin:0 0 18px;font-size:15px}
+</style></head><body>
+<div id="splash"><h2>Hola Semilla <span class="heart">❤️</span></h2><p>Toca para empezar</p></div>
+<main>
+ <section class="tab on" id="t1">
+  <h1>Unir PDFs</h1><p class="s">Elige varios PDFs y ordénalos como quieras.</p>
+  <div class="card" id="plist"><div class="empty">Aún no hay archivos</div></div>
+  <input type="file" id="fp" accept="application/pdf" multiple hidden>
+  <button class="btn g" onclick="fp.click()">＋ Añadir PDFs</button>
+  <button class="btn" id="mb" disabled onclick="merge()">Unir en un solo PDF</button>
+ </section>
+ <section class="tab" id="t2">
+  <h1>Crear PDF</h1><p class="s">Con fotos, texto o ambos.</p>
+  <textarea id="txt" rows="6" placeholder="Escribe aquí tu texto (opcional)…"></textarea>
+  <div class="card" id="ilist"><div class="empty">Sin fotos añadidas</div></div>
+  <input type="file" id="fi" accept="image/*" multiple hidden>
+  <button class="btn g" onclick="fi.click()">＋ Añadir fotos</button>
+  <button class="btn" onclick="create()">Crear PDF</button>
+ </section>
+</main>
+<nav><button class="on" onclick="tab(1,this)"><span>⧉</span>Unir</button><button onclick="tab(2,this)"><span>＋</span>Crear</button></nav>
+<div id="sheet"><div><h3>¡Listo! ✨</h3><p id="sn"></p><button class="btn" onclick="share()">Compartir / Guardar</button><button class="btn g" onclick="openIt()">Abrir</button><button class="btn g" onclick="sheet.classList.remove('on')">Cerrar</button></div></div>
+<script>
+const $=id=>document.getElementById(id);let pdfs=[],imgs=[],last=null;
+const sp=$('splash');sp.onclick=()=>sp.classList.add('out');setTimeout(()=>sp.classList.add('out'),2800);
+try{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#ff6b81');g.addColorStop(1,'#ff3b30');x.fillStyle=g;x.fillRect(0,0,180,180);x.font='96px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('❤️',90,98);const l=document.createElement('link');l.rel='apple-touch-icon';l.href=c.toDataURL();document.head.appendChild(l)}catch(e){}
+function tab(n,b){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));$('t'+n).classList.add('on');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}
+const kb=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+fp.onchange=async()=>{for(const f of fp.files){const bytes=new Uint8Array(await f.arrayBuffer());let pages='?';try{pages=(await PDFLib.PDFDocument.load(bytes,{ignoreEncryption:true})).getPageCount()}catch(e){continue}pdfs.push({name:f.name,bytes,pages,size:f.size})}fp.value='';rp()};
+fi.onchange=()=>{for(const f of fi.files)imgs.push({name:f.name,file:f,url:URL.createObjectURL(f)});fi.value='';ri()};
+function rp(){$('plist').innerHTML=pdfs.length?pdfs.map((p,i)=>`<div class="row"><div class="n"><b>${esc(p.name)}</b><small>${p.pages} pág. · ${kb(p.size)}</small></div><button class="ib" onclick="mv(pdfs,${i},-1,rp)">↑</button><button class="ib" onclick="mv(pdfs,${i},1,rp)">↓</button><button class="ib d" onclick="pdfs.splice(${i},1);rp()">✕</button></div>`).join(''):'<div class="empty">Aún no hay archivos</div>';$('mb').disabled=pdfs.length<2}
+function ri(){$('ilist').innerHTML=imgs.length?imgs.map((p,i)=>`<div class="row"><img src="${p.url}"><div class="n"><b>${esc(p.name)}</b></div><button class="ib" onclick="mv(imgs,${i},-1,ri)">↑</button><button class="ib" onclick="mv(imgs,${i},1,ri)">↓</button><button class="ib d" onclick="imgs.splice(${i},1);ri()">✕</button></div>`).join(''):'<div class="empty">Sin fotos añadidas</div>'}
+function mv(a,i,d,f){const j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];f()}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function merge(){const b=$('mb');b.disabled=true;b.textContent='Uniendo…';try{const out=await PDFLib.PDFDocument.create();for(const f of pdfs){const d=await PDFLib.PDFDocument.load(f.bytes,{ignoreEncryption:true});(await out.copyPages(d,d.getPageIndices())).forEach(p=>out.addPage(p))}done(await out.save(),'Unido.pdf',out.getPageCount())}catch(e){alert('No se pudo unir: '+e.message)}b.textContent='Unir en un solo PDF';b.disabled=false}
+function toJpg(url){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const m=2000,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);c.toBlob(async b=>res({buf:await b.arrayBuffer(),w:c.width,h:c.height}),'image/jpeg',.88)};im.onerror=rej;im.src=url})}
+async function create(){const t=$('txt').value.trim();if(!t&&!imgs.length){alert('Añade texto o fotos primero 🌱');return}
+try{const out=await PDFLib.PDFDocument.create(),W=595,H=842;
+if(t){const font=await out.embedFont(PDFLib.StandardFonts.Helvetica),M=50,fs=12,lh=17;let pg=out.addPage([W,H]),y=H-M;
+const clean=t.replace(/[^\x09\x0A\x20-\x7E\xA0-\xFF]/g,'');
+for(const para of clean.split('\n')){let line='';const words=para.split(' ');const flush=()=>{if(y<M){pg=out.addPage([W,H]);y=H-M}pg.drawText(line,{x:M,y,size:fs,font});y-=lh;line=''};
+for(const w of words){const test=line?line+' '+w:w;if(font.widthOfTextAtSize(test,fs)>W-2*M&&line){flush();line=w}else line=test}flush()}}
+for(const im of imgs){const j=await toJpg(im.url),e=await out.embedJpg(j.buf),m=24,s=Math.min((W-2*m)/j.w,(H-2*m)/j.h),w=j.w*s,h=j.h*s,p=out.addPage([W,H]);p.drawImage(e,{x:(W-w)/2,y:(H-h)/2,width:w,height:h})}
+done(await out.save(),'Creado.pdf',out.getPageCount())}catch(e){alert('No se pudo crear: '+e.message)}}
+function done(bytes,name,n){const blob=new Blob([bytes],{type:'application/pdf'});last={name,blob,file:new File([blob],name,{type:'application/pdf'}),url:URL.createObjectURL(blob)};$('sn').textContent=name+' · '+n+' páginas · '+kb(blob.size);$('sheet').classList.add('on')}
+async function share(){try{if(navigator.canShare&&navigator.canShare({files:[last.file]}))await navigator.share({files:[last.file],title:last.name});else openIt()}catch(e){if(e.name!=='AbortError')openIt()}}
+function openIt(){window.open(last.url,'_blank')}
+</script></body></html>
